@@ -228,6 +228,109 @@ table.calc td .p { color: var(--good); } table.calc td .n { color: var(--bad); }
 .rtool { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; margin-top: 6px; font-size: 14px; }
 .rtool b { font-size: 15px; }
 
+/* ---------- персонажи ---------- */
+.portrait { display: block; flex: none; border-radius: 50%; }
+.talk { display: flex; gap: 10px; align-items: flex-start; margin: 10px 0; }
+.talk .say { position: relative; flex: 1; background: var(--card); border: 1px solid var(--line); border-radius: 4px 14px 14px 14px; padding: 8px 12px 10px; box-shadow: 0 2px 6px rgba(20, 33, 61, .06); }
+.talk .say b { display: block; font-size: 12px; color: var(--red); text-transform: uppercase; letter-spacing: .8px; }
+.talk .say p { margin: 2px 0 0; font-size: 15.5px; line-height: 1.35; }
+.talk .say p b { display: inline; font-size: inherit; color: var(--navy); text-transform: none; letter-spacing: 0; }
+.talk.mei .say { background: #FFF6EC; border-color: #F2D9C2; }
+.talk .mini { margin-top: 8px; border: 0; background: var(--navy); color: var(--paper); border-radius: 8px; padding: 6px 14px; font-weight: 600; font-size: 14px; }
+.talk .sp { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+main > .talk { animation: up .35s ease-out both; }
+.cast { display: flex; justify-content: space-between; gap: 4px; margin: 6px 0 4px; }
+.cast div { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11.5px; color: var(--muted); text-align: center; flex: 1; }
+
+/* ---------- шкалы ---------- */
+.meters { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; margin-top: 6px; align-items: end; }
+.meters .m { display: grid; grid-template-columns: 1fr auto; column-gap: 6px; align-items: end; }
+.meters .m span { grid-column: 1 / span 2; font-size: 11.5px; color: var(--muted); line-height: 1.2; }
+.meters .bar { height: 8px; border-radius: 4px; background: var(--sand); overflow: hidden; margin-top: 3px; }
+.meters .bar i { display: block; height: 100%; border-radius: 4px; transition: width .4s ease; }
+.meters .eco .bar i { background: #5E9F4F; }
+.meters .gap .bar i { background: var(--red); }
+.meters .m b { font-size: 19px; font-variant-numeric: tabular-nums; line-height: 1; }
+.meters .idx { display: block; background: var(--navy); color: var(--paper); border-radius: 9px; padding: 4px 10px; text-align: center; }
+.meters .idx span { display: block; color: #C9D3E3; }
+.calcwrap .meters, .finalwrap .meters { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-top: 12px; }
+
+/* ---------- регион и кнопки ---------- */
+.chip { display: flex; align-items: center; gap: 6px; padding: 5px 10px 5px 5px; border-radius: 30px; }
+.chip span { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; line-height: 1.15; }
+.chip span b { display: block; font-size: 13.5px; color: var(--ink); }
+.pickhint { margin-top: 10px; text-align: center; padding: 18px; border: 2px dashed var(--line); border-radius: 14px; color: var(--muted); font-weight: 500; }
+.rhead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.rhead h2 { margin: 0; }
+.rhead .lv { display: flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; }
+.rhead .lv b { font-size: 20px; min-width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--navy); }
+.rhead .lv b.p { border-color: var(--good); color: var(--good); }
+.rhead .lv b.n { border-color: var(--bad); color: var(--bad); }
+.rhead .lv i { font-style: normal; color: var(--muted); }
+.tools { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
+.tcell { position: relative; }
+.tbtn { position: relative; width: 100%; min-height: 116px; border: 2px solid var(--line); background: var(--card); border-radius: 14px; padding: 8px 8px 10px; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; transition: transform .1s ease; }
+.tbtn:active { transform: scale(.96); }
+.tbtn .ic { width: 42px; height: 42px; }
+.tbtn .ic svg { width: 100%; height: 100%; }
+.tbtn .tn { font-weight: 700; font-size: 15px; line-height: 1.1; }
+.tbtn .tn small { display: block; font-weight: 400; font-size: 11.5px; color: var(--red); }
+.tbtn .te { font-size: 12.5px; color: var(--muted); }
+.tbtn .tc { display: flex; gap: 2px; margin-top: 2px; }
+.ci { display: inline-block; width: 11px; height: 11px; border-radius: 50%; background: #C8963E; box-shadow: inset 0 -2px 0 #9A6F28; vertical-align: -1px; }
+.tbtn .cnt { position: absolute; top: 6px; right: 8px; font-style: normal; font-weight: 800; color: #fff; background: var(--good); border-radius: 12px; padding: 1px 8px; font-size: 14px; }
+.tbtn .cnt.done { background: #8A837A; }
+.tbtn.on, .tbtn.has { border-color: var(--good); background: #F1F8EF; }
+.tbtn.done { border-color: #C9BFAE; background: #F4F1EA; }
+.tbtn.locked { background: #F1EEE8; border-style: dashed; }
+.tbtn.locked .tn, .tbtn.locked .te, .tbtn.locked .tc { opacity: .5; }
+.tbtn.poor { opacity: .55; }
+.undo { position: absolute; top: -8px; left: -6px; width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--card); background: var(--red); color: #fff; font-size: 22px; font-weight: 700; line-height: 1; padding: 0; box-shadow: 0 2px 6px rgba(0, 0, 0, .18); }
+.legendline { font-size: 12px; color: var(--muted); margin: 8px 0 0; text-align: center; }
+.legendline .dir { color: var(--blue); font-weight: 600; }
+.legendline .ind { color: var(--red); font-weight: 600; }
+
+/* ---------- живая карта ---------- */
+.badge { cursor: pointer; }
+.float { animation: floatup 1.4s ease-out both; }
+@keyframes floatup { 0% { transform: translateY(6px); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-14px); opacity: 0; } }
+.calcwrap .float { animation: floatup2 2.8s ease-out .3s both; }
+@keyframes floatup2 { 0% { transform: translateY(6px); opacity: 0; } 15% { opacity: 1; } 75% { opacity: 1; } 100% { transform: translateY(-10px); opacity: 0; } }
+.pop { transform-box: fill-box; transform-origin: 50% 100%; animation: pop .5s cubic-bezier(.3, 1.6, .5, 1) .9s both; }
+@keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
+
+/* ---------- событие, итоги ---------- */
+.scene { display: block; width: 100%; height: auto; border-radius: 12px; margin-top: 12px; background: #DCE8F1; }
+.effs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.eff { background: rgba(255, 255, 255, .1); border-radius: 20px; padding: 4px 12px; font-size: 15px; }
+.eff b { font-size: 18px; margin-left: 4px; }
+.eff.n b { color: #F2A08F; } .eff.p b { color: #A8DDB5; } .eff.z b { color: #C9D3E3; text-decoration: line-through; }
+.govs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.gov { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 6px 2px; }
+.gov span { font-size: 11px; color: var(--muted); line-height: 1.1; }
+.gov b { font-size: 15px; font-variant-numeric: tabular-nums; }
+.gov b s { color: var(--faint); font-weight: 400; text-decoration: none; }
+.gov b em { font-style: normal; font-size: 19px; }
+.gov em.p { color: var(--good); } .gov em.n { color: var(--bad); }
+.gov small { font-size: 10px; color: var(--red); line-height: 1.1; }
+.bonus { display: flex; gap: 10px; align-items: center; }
+.bonus .coinrow { display: flex; flex-wrap: wrap; gap: 2px; width: 40px; flex: none; justify-content: center; }
+.bonus .coinrow .ci { width: 16px; height: 16px; animation: pop .4s ease-out both; }
+.det { margin-top: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; }
+.det summary { cursor: pointer; font-weight: 600; color: var(--navy); }
+.det table.calc { margin-top: 6px; }
+.trophy { background: var(--navy); color: var(--paper); border-radius: 16px; padding: 14px 14px 10px; margin-bottom: 12px; }
+.trophy .kick { font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; color: #E3B8A8; font-weight: 600; }
+.trophy .equation div { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .15); }
+.trophy .equation div span, .trophy .equation .op { color: #C9D3E3; }
+.trophy .equation .res { background: var(--red); border-color: var(--red); }
+.sub.light { color: #C9D3E3; margin: 6px 0 0; }
+.rtool { display: flex; gap: 10px; align-items: flex-start; }
+.rtool .ic { width: 36px; height: 36px; flex: none; }
+.rtool .ic svg { width: 100%; height: 100%; }
+.rtool .tc { display: inline-flex; gap: 2px; }
+.hero { padding-bottom: 18px; }
+
 @media (min-width: 980px) {
   #app { max-width: 1100px; }
   .status { top: 58px; }
