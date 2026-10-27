@@ -561,4 +561,12 @@
 
   if (S.screen !== 'start' && (!S.game || !S.mapId)) S = fresh(S.lang);
   render();
+
+  // Заставка видна, пока грузится игра, и всего не меньше 2,4 секунды; по нажатию исчезает сразу.
+  const splash = document.getElementById('splash');
+  if (splash) {
+    const hide = () => { if (!splash.isConnected) return; splash.classList.add('hide'); setTimeout(() => splash.remove(), 600); };
+    splash.addEventListener('click', hide);
+    setTimeout(hide, Math.max(0, 2400 - performance.now()));
+  }
 })();
