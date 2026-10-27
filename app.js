@@ -2,31 +2,39 @@
 (function () {
   'use strict';
   const E = window.Engine, I = window.I18N, A = window.Art;
-  const KEY = 'pyatiletka-game-v2';
+  const KEY = 'pyatiletka-game-v3';
   const ZH_NUM = ['', '一', '二', '三', '四'];
   const app = document.getElementById('app');
   const TOOLS = ['dot', 'road', 'tax', 'sez'];
 
   // ---------- состояние ----------
   function defaultLang() { try { return /^zh/i.test(navigator.language || '') ? 'zh' : 'ru'; } catch (e) { return 'ru'; } }
-  function fresh(lang) { return { lang: lang || defaultLang(), team: '', screen: 'start', game: null, dec: null, sel: null, last: null, lastRound: 0, rounds: E.ROUNDS, coach: 0, say: null }; }
+  function fresh(lang) { return { lang: lang || defaultLang(), mapId: null, team: '', screen: 'start', game: null, dec: null, sel: null, last: null, lastRound: 0, rounds: E.ROUNDS, coach: 0, say: null }; }
   function load() { try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); return s && s.screen ? s : null; } catch (e) { return null; } }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
   let S = load() || fresh();
   let modal = null, fx = null;
 
   // ---------- тексты ----------
+  // Сначала тексты выбранной карты, потом общие.
+  function look(lang, k, mapId) {
+    const m = I.MAPTEXT[mapId || S.mapId || 'ru'][lang];
+    if (m[k] !== undefined) return m[k];
+    if (I.STR[lang][k] !== undefined) return I.STR[lang][k];
+    return I.CAST[lang][k];
+  }
   function t(k, v) {
-    let s = I.STR[S.lang][k];
-    if (s === undefined) s = I.CAST[S.lang][k];
-    if (s === undefined) s = I.STR.ru[k];
+    let s = look(S.lang, k);
+    if (s === undefined) s = look('ru', k);
     if (s === undefined) s = k;
     if (v) Object.keys(v).forEach(n => { s = s.split('{' + n + '}').join(v[n]); });
     return s;
   }
+  const tOther = k => look(S.lang === 'zh' ? 'ru' : 'zh', k);
   const term = k => (S.lang === 'zh' ? I.TERMS[k].zh : I.TERMS[k].ru);
   const termAlt = k => (S.lang === 'zh' ? I.TERMS[k].ru : I.TERMS[k].zh);
-  const rname = (k, short) => (S.lang === 'zh' ? I.TERMS[k].zh : (short ? I.TERMS[k].short : I.TERMS[k].ru));
+  const rname = (k, short) => t(short ? k + '_s' : k);
+  const tagOf = k => (k === 'C' ? `${t('tagC')} · ${tOther('tagC')}` : `${term('tag' + k)} · ${termAlt('tag' + k)}`);
   const num = n => (S.lang === 'zh' ? ZH_NUM[n] : n);
   const roundName = n => t('round', { n: num(n) });
   const roundCode = n => I.ROUND_CODE[n][0] + ' · ' + I.ROUND_CODE[n][1];
@@ -36,27 +44,70 @@
   const teamName = () => esc(S.team.trim() || t('teamDefault'));
   const coinIcons = n => '<i class="ci"></i>'.repeat(n);
 
-  // ---------- карта ----------
-  // Шестигранники «острым верхом», нечётные ряды сдвинуты вправо. X — соседняя страна, ~ — море.
-  const GRID = [
-    'XCCCCCC~~~',
-    'XCCCCCCB~~',
-    'XEEAABBB~~',
-    'XEEAAABB~~',
-    'XEEDAAB~~~',
-    'XEDDDDD~~~',
-    'XXDDDD~~~~'
-  ];
+  // ---------- карты ----------
+  // Шестигранники «острым верхом», нечётные ряды сдвинуты вправо.
+  // A–E — игровые регионы, X — соседние страны, ~ — море, N — суша страны вне игровых регионов.
+  // Роли регионов те же, что в бумажной игре: A столица, B порт, C ресурсы, D старопромышленный, E приграничье.
+  const MAPS = {
+    ru: {
+      grid: [
+        '~~~~~DDD~~~~~',
+        'XBBCCDDEEEEEE',
+        'BBBCCDDEEEEEE',
+        'BAACCDDEEEEE~',
+        'AAACCDDEEE~E~',
+        'XAAXXDDEEEE~~',
+        'XAAXXXXXXE~~~'
+      ],
+      seat: { A: [4, 1], B: [2, 1], C: [3, 3], D: [3, 5], E: [3, 9] },
+      feat: { A: [5, 1], B: [3, 0], C: [2, 4], D: [4, 5], E: [5, 8] },
+      sez: { B: [1, 1], E: [6, 9] },
+      ships: [[0, 10, 11], [5, 12, 9]],
+      flora: { A: 'round', B: 'pine', C: 'pine', D: 'pine', E: 'pine' },
+      capital: 'tower',
+      badge: 1.3,
+      labels: [
+        { t: 'СЕВЕРНЫЙ ЛЕДОВИТЫЙ ОКЕАН · 北冰洋', r: 0, c: 2.6 },
+        { t: 'ТИХИЙ ОКЕАН · 太平洋', r: 6, c: 11.3 },
+        { t: 'КИТАЙ · 中国', r: 6, c: 7.7 },
+        { t: 'МОНГОЛИЯ · 蒙古', r: 6, c: 5.7 },
+        { t: 'КАЗАХСТАН · 哈萨克斯坦', r: 6, c: 3.6 }
+      ]
+    },
+    cn: {
+      grid: [
+        'XXXXXXXXXCDX',
+        'XXEEXXXXCCDD',
+        'XEEEECCCCDDD',
+        'EEEEEECCADX~',
+        'XEEEEEEAAB~~',
+        'XEEEEEEAAB~~',
+        'XXXEEEEAAB~~',
+        'XXXXXEEBBB~~',
+        'XXXXXXXB~~~~'
+      ],
+      seat: { A: [3, 8], B: [6, 9], C: [2, 6], D: [2, 10], E: [5, 5] },
+      feat: { A: [4, 8], B: [7, 7], C: [3, 7], D: [1, 10], E: [7, 5] },
+      sez: { B: [7, 8], E: [2, 1] },
+      ships: [[5, 10, 10], [8, 9, 12]],
+      flora: { A: 'round', B: 'round', C: 'grass', D: 'pine', E: 'west' },
+      capital: 'gate',
+      badge: 1.15,
+      labels: [
+        { t: 'РОССИЯ · 俄罗斯', r: 0, c: 4 },
+        { t: 'МОНГОЛИЯ · 蒙古', r: 1, c: 5.5 },
+        { t: 'ИНДИЯ · 印度', r: 7, c: 1.6 },
+        { t: 'ТИХИЙ ОКЕАН · 太平洋', r: 4.6, c: 11.35, rot: 90 },
+        { t: 'ЮЖНО-КИТАЙСКОЕ МОРЕ · 南海', r: 8, c: 9.6 }
+      ]
+    }
+  };
   const HS = 20, SQ3 = Math.sqrt(3);
-  const MW = HS * SQ3 * 10.5, MH = HS * 11;
-  const SEAT = { A: [3, 4], B: [2, 6], C: [1, 3], D: [5, 4], E: [3, 1] };
-  const FEAT = { A: [2, 4], B: [3, 7], C: [0, 5], D: [6, 3], E: [5, 1] };
-  const SEZHEX = { B: [2, 7], E: [4, 1] };
-  const LAND = { A: '#CFE3B4', B: '#C4DFAE', C: '#DCE4CC', D: '#DCD3BE', E: '#E8DEB4' };
-  const cell = (r, c) => (GRID[r] && GRID[r][c]) || ' ';
-  const center = (r, c) => [HS * SQ3 * (c + 0.5 * (r & 1)) + HS * SQ3 / 2, HS * 1.5 * r + HS];
+  const LAND = { A: '#CFE3B4', B: '#C4DFAE', C: '#DCE4CC', D: '#DCD3BE', E: '#E8DEB4', N: '#D3DCC4' };
+  const center = (r, c) => [HS * SQ3 * (c + 0.5 * (Math.round(r) & 1)) + HS * SQ3 / 2, HS * 1.5 * r + HS];
   function corner(x, y, i, s) { const a = (60 * i - 30) * Math.PI / 180; return [x + s * Math.cos(a), y + s * Math.sin(a)]; }
   function hexPts(x, y, s) { const p = []; for (let i = 0; i < 6; i++) p.push(corner(x, y, i, s).map(n => n.toFixed(1)).join(',')); return p.join(' '); }
+  // Сосед за ребром i (ребро между углами i и i+1): В, ЮВ, ЮЗ, З, СЗ, СВ.
   function nb(r, c, i) {
     const o = r & 1;
     const d = [[0, 1], [1, o ? 1 : 0], [1, o ? 0 : -1], [0, -1], [-1, o ? 0 : -1], [-1, o ? 1 : 0]][i];
@@ -64,79 +115,97 @@
   }
   const isReg = ch => 'ABCDE'.includes(ch);
   const key = (r, c) => r + ',' + c;
+  const same = (p, q) => !!q && p[0] === q[0] && p[1] === q[1];
 
-  // Дорога от столицы до центра региона — кратчайший путь по суше.
-  const ROUTE = {};
-  E.KEYS.forEach(k => {
-    if (k === 'A') { ROUTE.A = [SEAT.A]; return; }
-    const start = SEAT.A, goal = key(...SEAT[k]);
-    const prev = { [key(...start)]: null }, q = [start];
-    while (q.length) {
-      const [r, c] = q.shift();
-      if (key(r, c) === goal) break;
-      for (let i = 0; i < 6; i++) {
-        const [nr, nc] = nb(r, c, i);
-        if (!isReg(cell(nr, nc)) || key(nr, nc) in prev) continue;
-        prev[key(nr, nc)] = [r, c]; q.push([nr, nc]);
+  // Готовит карту: размеры и дороги от столицы до центра каждого региона (кратчайший путь по суше).
+  function getMap(id) {
+    const M = MAPS[id];
+    if (M.ready) return M;
+    M.cell = (r, c) => (M.grid[r] && M.grid[r][c]) || ' ';
+    M.w = HS * SQ3 * (M.grid[0].length + 0.5);
+    M.h = HS * (1.5 * (M.grid.length - 1) + 2);
+    M.route = {};
+    E.KEYS.forEach(k => {
+      if (k === 'A') { M.route.A = [M.seat.A]; return; }
+      const start = M.seat.A, goal = key(...M.seat[k]);
+      const prev = { [key(...start)]: null }, q = [start];
+      while (q.length) {
+        const [r, c] = q.shift();
+        if (key(r, c) === goal) break;
+        for (let i = 0; i < 6; i++) {
+          const [nr, nc] = nb(r, c, i);
+          if (!isReg(M.cell(nr, nc)) || key(nr, nc) in prev) continue;
+          prev[key(nr, nc)] = [r, c]; q.push([nr, nc]);
+        }
       }
-    }
-    const path = []; let cur = SEAT[k];
-    while (cur) { path.unshift(cur); cur = prev[key(...cur)]; }
-    ROUTE[k] = path;
-  });
-  const routeD = k => ROUTE[k].map((p, i) => (i ? 'L' : 'M') + center(...p).map(n => n.toFixed(1)).join(',')).join(' ');
+      const path = []; let cur = M.seat[k];
+      while (cur) { path.unshift(cur); cur = prev[key(...cur)]; }
+      M.route[k] = path;
+    });
+    M.ready = true;
+    return M;
+  }
+  const routeD = (M, k) => M.route[k].map((p, i) => (i ? 'L' : 'M') + center(...p).map(n => n.toFixed(1)).join(',')).join(' ');
 
   // Клетки региона под застройку: ближние к центру — первыми.
-  function freeCells(k, roadSet) {
+  function freeCells(M, k, roadSet) {
     const list = [];
-    GRID.forEach((row, r) => { for (let c = 0; c < row.length; c++) if (row[c] === k) list.push([r, c]); });
-    const skip = p => [SEAT[k], FEAT[k], SEZHEX[k]].some(q => q && q[0] === p[0] && q[1] === p[1]) || roadSet.has(key(...p));
-    const [sx, sy] = center(...SEAT[k]);
+    M.grid.forEach((row, r) => { for (let c = 0; c < row.length; c++) if (row[c] === k) list.push([r, c]); });
+    const skip = p => same(p, M.seat[k]) || same(p, M.feat[k]) || same(p, M.sez[k]) || roadSet.has(key(...p));
+    const [sx, sy] = center(...M.seat[k]);
     return list.filter(p => !skip(p)).sort((p, q) => { const a = center(...p), b = center(...q); return Math.hypot(a[0] - sx, a[1] - sy) - Math.hypot(b[0] - sx, b[1] - sy); });
   }
   const housesFor = lv => Math.ceil(lv / 2);
+  function flora(M, k, p, x, y) {
+    const kind = M.flora[k], even = (p[0] + p[1]) % 2 === 0;
+    if (kind === 'pine') return A.tree(x + (p[1] % 2 ? 3 : -3), y + 4, true);
+    if (kind === 'grass') return even ? A.grass(x, y + 3) : '';
+    if (kind === 'west') return p[1] <= 4 && p[0] >= 3 ? (even ? A.mountain(x, y + 2) : '') : (even ? A.grass(x, y + 3) : '');
+    return even ? A.tree(x + (p[1] % 2 ? 3 : -3), y + 4, false) : '';
+  }
 
-  // o: { lv, roads, sez, planRoads, planSez, sel, delta, interactive, prevLv, float, leavers, closed }
+  // o: { map, lv, roads, sez, planRoads, planSez, sel, delta, interactive, prevLv, float, leavers, closed }
   let mapSeq = 0;
   function mapSVG(o) {
+    const M = getMap(o.map || S.mapId || 'ru'), bs = M.badge;
     const id = 'm' + (++mapSeq);
     const roadSet = new Set();
-    o.roads.concat(o.planRoads).forEach(k => ROUTE[k].forEach(p => roadSet.add(key(...p))));
+    o.roads.concat(o.planRoads).forEach(k => M.route[k].forEach(p => roadSet.add(key(...p))));
     let hexes = '', edges = '', selEdges = '', deco = '', roads = '', marks = '', badges = '', sea = '';
-    GRID.forEach((row, r) => {
+    M.grid.forEach((row, r) => {
       for (let c = 0; c < row.length; c++) {
         const ch = row[c], [x, y] = center(r, c);
         const fill = ch === '~' ? '#BFD8EC' : ch === 'X' ? `url(#h-${id})` : LAND[ch];
         hexes += `<polygon class="hex${isReg(ch) ? ' reg' : ''}" points="${hexPts(x, y, HS + 0.5)}" fill="${fill}"${isReg(ch) ? ` data-k="${ch}"` : ''}/>`;
         if (isReg(ch) && (r * 7 + c * 3) % 3) hexes += `<polygon points="${hexPts(x, y, HS - 1)}" fill="#FFFFFF" opacity="${(r * 7 + c * 3) % 3 === 1 ? 0.07 : 0.14}" pointer-events="none"/>`;
         if (ch === '~' && (r + c) % 2 === 0) sea += A.wave(x, y + 3, r + c);
-        if (ch === 'X' && r % 2 === 0) deco += A.mountain(x, y + 2);
-        if (!isReg(ch)) continue;
+        if (ch === 'X' && (r + c) % 3 === 0 && !M.labels.some(l => Math.round(l.r) === r && Math.abs(l.c - c) < 1.2)) deco += A.mountain(x, y + 2);
+        if (!isReg(ch) && ch !== 'N') continue;
         for (let i = 0; i < 6; i++) {
-          const n = cell(...nb(r, c, i));
-          if (n === ch) continue;
+          const n = M.cell(...nb(r, c, i));
+          if (n === ch || (ch === 'N' && isReg(n))) continue;
           const [x1, y1] = corner(x, y, i, HS), [x2, y2] = corner(x, y, (i + 1) % 6, HS);
           const seg = `M${x1.toFixed(1)},${y1.toFixed(1)} L${x2.toFixed(1)},${y2.toFixed(1)}`;
-          edges += `<path d="${seg}" stroke="#14213D" stroke-width="${isReg(n) ? 1.4 : 2.4}" stroke-linecap="round"/>`;
+          edges += `<path d="${seg}" stroke="#14213D" stroke-width="${isReg(n) || n === 'N' ? 1.4 : 2.4}" stroke-linecap="round"/>`;
           if (ch === o.sel) selEdges += `<path d="${seg}" stroke="#A13A2C" stroke-width="3.6" stroke-linecap="round"/>`;
         }
       }
     });
-    sea += A.ship(...center(3, 9).map((v, i) => v + (i ? 2 : -6)), 9) + A.ship(...center(6, 8).map((v, i) => v + (i ? 0 : 4)), 12);
+    M.ships.forEach(s => { const [x, y] = center(s[0], s[1]); sea += A.ship(x, y + 2, s[2]); });
 
     E.KEYS.forEach(k => {
-      const v = o.lv[k], cells = freeCells(k, roadSet);
+      const v = o.lv[k], cells = freeCells(M, k, roadSet);
       const n = Math.min(cells.length, housesFor(v));
       const before = o.prevLv ? Math.min(cells.length, housesFor(o.prevLv[k])) : n;
       const tier = A.tierFor(v);
       cells.forEach((p, i) => {
         const [x, y] = center(...p);
-        if (i < n) deco += A.building(x, y + 2, tier, i >= before ? 'pop' : '');
-        else if ((p[0] + p[1]) % 2 === 0 || k === 'C') deco += A.tree(x + ((p[1] % 2) ? 3 : -3), y + 4, k === 'C');
+        deco += i < n ? A.building(x, y + 2, tier, i >= before ? 'pop' : '') : flora(M, k, p, x, y);
       });
-      if (FEAT[k]) marks += A.landmark(k, ...center(...FEAT[k]).map((v2, i) => v2 + (i ? 4 : 0)), k === 'D' && o.closed ? 'closed' : '');
-      if (SEZHEX[k]) {
-        const [x, y] = center(...SEZHEX[k]);
+      const [fx0, fy0] = center(...M.feat[k]);
+      marks += k === 'A' && M.capital === 'gate' ? A.gate(fx0, fy0 + 4) : A.landmark(k, fx0, fy0 + 4, k === 'D' && o.closed ? 'closed' : '');
+      if (M.sez[k]) {
+        const [x, y] = center(...M.sez[k]);
         if (o.sez.includes(k)) marks += A.sezZone(x, y, false); else if (o.planSez.includes(k)) marks += A.sezZone(x, y, true);
       }
     });
@@ -145,44 +214,49 @@
       const has = o.roads.includes(k), plan = o.planRoads.includes(k);
       if (!has && !plan) return;
       if (k === 'A') {
-        const [ax, ay] = center(...SEAT.A);
-        roads += `<circle cx="${ax}" cy="${ay}" r="16" fill="none" stroke="${plan ? '#F2A33A' : '#5A5048'}" stroke-width="${plan ? 3 : 4}" ${plan ? 'stroke-dasharray="4 3"' : ''}/>`;
+        const [ax, ay] = center(...M.seat.A);
+        roads += `<circle cx="${ax}" cy="${ay}" r="${(16 * bs).toFixed(1)}" fill="none" stroke="${plan ? '#F2A33A' : '#5A5048'}" stroke-width="${plan ? 3 : 4}" ${plan ? 'stroke-dasharray="4 3"' : ''}/>`;
         return;
       }
-      const d = routeD(k);
+      const d = routeD(M, k);
       if (plan) {
-        const mid = center(...ROUTE[k][Math.floor(ROUTE[k].length / 2)]);
+        const mid = center(...M.route[k][Math.floor(M.route[k].length / 2)]);
         roads += `<path d="${d}" stroke="#F2A33A" stroke-width="4" stroke-dasharray="5 4" stroke-linecap="round" stroke-linejoin="round"><animate attributeName="stroke-dashoffset" values="0;-18" dur="1s" repeatCount="indefinite"/></path>` + A.cone(mid[0] + 5, mid[1] - 4);
       } else {
-        roads += `<path d="${d}" stroke="#5A5048" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" stroke="#F7F5F0" stroke-width="1" stroke-dasharray="3 3.5"/>` + A.truck(d, 7 + i, i * 0.8);
+        roads += `<path d="${d}" stroke="#5A5048" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" stroke="#F7F5F0" stroke-width="1" stroke-dasharray="3 3.5"/>` + A.truck(d, 5 + M.route[k].length * 1.4, i * 0.8);
       }
     });
 
+    const font = 'font-family="IBM Plex Sans, Segoe UI, Arial, sans-serif"';
     E.KEYS.forEach(k => {
-      const [x, y] = center(...SEAT[k]);
-      const sel = k === o.sel;
-      badges += `<g data-k="${k}" class="reg badge${sel ? ' sel' : ''}"><circle cx="${x}" cy="${y}" r="12.5" fill="${sel ? '#A13A2C' : '#FFFDF8'}" stroke="#14213D" stroke-width="2"/>` +
-        `<text x="${x}" y="${y + 4.8}" text-anchor="middle" font-size="14" font-weight="700" fill="${sel ? '#FFFDF8' : '#14213D'}" font-family="IBM Plex Sans, Segoe UI, Arial, sans-serif" class="lvnum" data-k="${k}">${o.prevLv ? o.prevLv[k] : o.lv[k]}</text></g>`;
+      const [x, y] = center(...M.seat[k]);
+      const sel = k === o.sel, R = 12.5 * bs;
+      badges += `<g data-k="${k}" class="reg badge${sel ? ' sel' : ''}"><circle cx="${x}" cy="${y}" r="${R.toFixed(1)}" fill="${sel ? '#A13A2C' : '#FFFDF8'}" stroke="#14213D" stroke-width="2"/>` +
+        `<text x="${x}" y="${(y + 4.8 * bs).toFixed(1)}" text-anchor="middle" font-size="${(14 * bs).toFixed(1)}" font-weight="700" fill="${sel ? '#FFFDF8' : '#14213D'}" ${font} class="lvnum" data-k="${k}">${o.prevLv ? o.prevLv[k] : o.lv[k]}</text></g>`;
       if (o.delta && o.delta[k] !== undefined) {
         const dv = o.delta[k], col = dv > 0 ? '#2F7A45' : dv < 0 ? '#A13A2C' : '#8A837A';
-        badges += `<g pointer-events="none"><rect x="${x + 7}" y="${y - 25}" width="26" height="15" rx="7.5" fill="${col}" stroke="#FFFDF8" stroke-width="1.2"/>` +
-          `<text x="${x + 20}" y="${y - 14}" text-anchor="middle" font-size="11" font-weight="700" fill="#fff" font-family="IBM Plex Sans, Segoe UI, Arial, sans-serif">${signed(dv)}</text></g>`;
+        const px = x + R * 0.55, py = y - R - 14 * bs + 2;
+        badges += `<g pointer-events="none"><rect x="${px.toFixed(1)}" y="${py.toFixed(1)}" width="${(26 * bs).toFixed(1)}" height="${(15 * bs).toFixed(1)}" rx="${(7.5 * bs).toFixed(1)}" fill="${col}" stroke="#FFFDF8" stroke-width="1.2"/>` +
+          `<text x="${(px + 13 * bs).toFixed(1)}" y="${(py + 11 * bs).toFixed(1)}" text-anchor="middle" font-size="${(11 * bs).toFixed(1)}" font-weight="700" fill="#fff" ${font}>${signed(dv)}</text></g>`;
       }
       if (o.float && o.float[k]) {
         const dv = o.float[k];
-        badges += `<text class="float" x="${x}" y="${y - 16}" text-anchor="middle" font-size="16" font-weight="800" fill="${dv > 0 ? '#2F7A45' : '#A13A2C'}" stroke="#FFFDF8" stroke-width="3" paint-order="stroke" font-family="IBM Plex Sans, Segoe UI, Arial, sans-serif">${signed(dv)}</text>`;
+        badges += `<text class="float" x="${x}" y="${(y - R - 4).toFixed(1)}" text-anchor="middle" font-size="${(16 * bs).toFixed(1)}" font-weight="800" fill="${dv > 0 ? '#2F7A45' : '#A13A2C'}" stroke="#FFFDF8" stroke-width="3" paint-order="stroke" ${font}>${signed(dv)}</text>`;
       }
       if (o.leavers && o.leavers.includes(k)) {
-        const [tx, ty] = center(...SEAT.A);
+        const [tx, ty] = center(...M.seat.A);
         badges += A.leaver(x, y + 8, tx - 10, ty + 10, 0.4) + A.leaver(x + 6, y + 10, tx - 4, ty + 12, 1.1);
       }
     });
-    const lbl = 'font-size="8.5" fill="#5F5A52" letter-spacing="1.5" font-family="IBM Plex Sans, Segoe UI, Arial, sans-serif" text-anchor="middle"';
-    return `<svg viewBox="0 0 ${MW.toFixed(1)} ${MH}" role="img" aria-label="${t('map')}"${o.interactive ? ' id="map"' : ''}>` +
+    // Подпись в две строки: по-русски сверху, по-китайски снизу.
+    const labels = M.labels.map(l => {
+      const [x, y] = center(l.r, l.c), [ru, zh] = l.t.split(' · ');
+      return `<text font-size="7.5" fill="#5F5A52" letter-spacing=".8" ${font} text-anchor="middle" font-weight="600" pointer-events="none" transform="translate(${x.toFixed(1)},${(y - 1).toFixed(1)})${l.rot ? ' rotate(' + l.rot + ')' : ''}">` +
+        `<tspan x="0" dy="0">${ru}</tspan><tspan x="0" dy="9">${zh}</tspan></text>`;
+    }).join('');
+    return `<svg viewBox="0 0 ${M.w.toFixed(1)} ${M.h}" role="img" aria-label="${t('map')} · ${t('mapName')}"${o.interactive ? ' id="map"' : ''}>` +
       `<defs><pattern id="h-${id}" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#E6E1D7"/><line x1="0" y1="0" x2="0" y2="6" stroke="#D5CEC0" stroke-width="2"/></pattern></defs>` +
-      hexes + sea + `<g fill="none">${edges}</g><g fill="none">${roads}</g>` + deco + marks + `<g fill="none">${selEdges}</g>` + badges +
-      `<text ${lbl} transform="translate(${MW - 10},${MH / 2}) rotate(90)">${t('sea').toUpperCase()}</text>` +
-      `<text ${lbl} transform="translate(10,${MH / 2}) rotate(-90)">${t('neighbor').toUpperCase()}</text></svg>`;
+      hexes + sea + `<g fill="none">${edges}</g><g fill="none">${roads}</g>` + deco + marks + `<g fill="none">${selEdges}</g>` + labels + badges + `</svg>`;
   }
   const factoryClosed = G => G.history.some(h => h.round === 2 && h.res.events.some(e => e.k === 'D' && e.applied));
 
@@ -208,15 +282,21 @@
   function scrStart() {
     const g = E.newGame();
     const h1 = S.lang === 'zh' ? '五年规划<span>Пятилетка</span>' : 'Пятилетка<span>五年规划</span>';
+    const pick = id => {
+      const on = S.mapId === id;
+      return `<button type="button" class="mapopt${on ? ' on' : ''}" data-act="map" data-map="${id}" aria-pressed="${on}">` +
+        `<span class="mapprev">${mapSVG({ map: id, lv: g.lv, roads: [], sez: [], planRoads: [], planSez: [], sel: null })}</span>` +
+        `<b>${look(S.lang, 'mapName', id)}<small>${look(S.lang === 'zh' ? 'ru' : 'zh', 'mapName', id)}</small></b></button>`;
+    };
+    const roles = S.mapId ? `<div class="cast">${E.KEYS.map(k => `<div>${A.portrait(k, 0, 46)}<b>${rname(k, true)}</b><span>${t('role' + k)}</span></div>`).join('')}</div>` : '';
     return `<section class="hero"><div class="langrow">${langToggle()}</div>` +
       `<div class="kick">${t('subtitle')}</div><h1>${h1}</h1></section>` +
-      `<div class="startbody">` +
-      `<div class="mapcard">${mapSVG({ lv: g.lv, roads: [], sez: [], planRoads: [], planSez: [], sel: null })}</div>` +
-      bubble('M', 1, t('intro')) +
-      `<div class="cast">${E.KEYS.map(k => `<div>${A.portrait(k, 0, 46)}<span>${rname(k, true)}</span></div>`).join('')}</div>` +
+      `<div class="startbody">` + bubble('M', 1, t('intro')) +
+      `<div class="h4">${t('chooseMap')}</div><div class="mapopts">${pick('ru')}${pick('cn')}</div>` + roles +
       `<div class="field"><label for="team">${t('team')}</label><input id="team" maxlength="24" autocomplete="off" placeholder="${t('teamDefault')}" value="${esc(S.team)}"></div>` +
       `<p class="foot">${t('author')}</p></div>` +
-      bottom(`<button type="button" class="primary" data-act="start">${t('start')}</button>`);
+      bottom(S.mapId ? `<button type="button" class="primary" data-act="start">${t('start')}<small>${t('playOn', { m: t('mapName') })}</small></button>`
+        : `<button type="button" class="primary" disabled>${t('chooseMap')}</button>`);
   }
 
   function regionMood(G, D, k) {
@@ -275,9 +355,9 @@
       const said = S.say && S.say.k === k ? S.say : null;
       const mood = said ? said.mood : regionMood(G, D, k);
       const text = said ? t(said.key) : t('ask' + k);
-      const head = `<div class="rhead"><h2>${rname(k)}<small>${S.lang === 'zh' ? I.TERMS[k].ru : I.TERMS[k].zh}</small></h2>` +
+      const head = `<div class="rhead"><h2>${rname(k)}<small>${tOther(k)}</small></h2>` +
         `<span class="lv"><b>${G.lv[k]}</b><i>→</i><b class="${cls(delta[k])}">${fc.lv[k]}</b></span></div>` +
-        `<div class="tags"><span class="tag ${r.donor ? 'donor' : 'recipient'}">${term(r.donor ? 'donor' : 'recipient')} · ${termAlt(r.donor ? 'donor' : 'recipient')}</span><span class="tag">${term('tag' + k)} · ${termAlt('tag' + k)}</span></div>`;
+        `<div class="tags"><span class="tag ${r.donor ? 'donor' : 'recipient'}">${term(r.donor ? 'donor' : 'recipient')} · ${termAlt(r.donor ? 'donor' : 'recipient')}</span><span class="tag">${tagOf(k)}</span></div>`;
       card = `<section class="panel" aria-live="polite">${head}${bubble(k, mood, text)}` +
         `<div class="tools">${TOOLS.map(tool => toolButton(G, D, k, tool, left)).join('')}</div>` +
         `<p class="legendline"><span class="dir">${term('direct')}</span> ${t('dotName')}, ${t('roadName')} · <span class="ind">${term('indirect')}</span> ${t('taxName')}, ${t('sezName')}</p></section>`;
@@ -300,10 +380,9 @@
       const v = e.applied ? e.d : 0;
       return `<span class="eff ${v > 0 ? 'p' : v < 0 ? 'n' : 'z'}">${rname(e.k, true)} <b>${signed(e.d)}</b></span>`;
     }).join('');
-    const other = S.lang === 'zh' ? I.STR.ru['ev' + n] : I.STR.zh['ev' + n];
     return topBar(roundName(n), roundCode(n) + ' · ' + teamName()) +
-      `<div class="eventwrap"><div class="eventcard"><div class="kick">${t('eventTitle')}</div><h2>${t('ev' + n)}<small>${other}</small></h2>` +
-      A.eventScene(n, main.applied) + `<div class="effs">${effects}</div></div>` +
+      `<div class="eventwrap"><div class="eventcard"><div class="kick">${t('eventTitle')}</div><h2>${t('ev' + n)}<small>${tOther('ev' + n)}</small></h2>` +
+      `<p>${t('ev' + n + 'Text')}</p>` + A.eventScene(n, main.applied, t('scene1')) + `<div class="effs">${effects}</div></div>` +
       bubble(main.k, mood, line) + `<div class="why">${t('ev' + n + 'Why')}</div></div>` +
       bottom(`<button type="button" class="primary" data-act="toCalc">${t('toCalc')}</button>`);
   }
@@ -338,7 +417,7 @@
     const govs = E.KEYS.map(k => { const g = G.lv[k] - start[k]; return `<div class="gov">${A.portrait(k, g >= 4 ? 1 : g <= 0 ? -1 : 0, 46)}<span>${rname(k, true)}</span><b><em>${G.lv[k]}</em></b></div>`; }).join('');
     const canExtra = S.rounds < E.MAX_ROUNDS;
     return topBar(t('finalTitle'), teamName()) +
-      `<div class="finalwrap"><div class="trophy"><div class="kick">${t('resultsOf')} · ${teamName()}</div>` +
+      `<div class="finalwrap"><div class="trophy"><div class="kick">${t('resultsOf')} · ${t('mapName')} · ${teamName()}</div>` +
       `<div class="equation"><div><b>${sc.sum}</b><span>${term('eco')}</span></div><span class="op">−</span><div><b>${sc.gap}</b><span>${term('gap')}</span></div><span class="op">=</span><div class="res"><b>${sc.idx}</b><span>${term('idx')}</span></div></div>` +
       `<p class="sub light">${t('tellTeacher')}</p></div>` +
       `<div class="mapcard">${mapSVG({ lv: G.lv, roads: G.roads, sez: G.sez, planRoads: [], planSez: [], sel: null, closed: factoryClosed(G) })}</div>` +
@@ -443,7 +522,8 @@
       case 'rules': modal = 'rules'; break;
       case 'close': modal = null; break;
       case 'coach': S.coach = S.game.round; break;
-      case 'start': S.game = E.newGame(); S.dec = E.blankDecision(); S.sel = null; S.rounds = E.ROUNDS; S.coach = 0; return go('plan');
+      case 'map': S.mapId = el.dataset.map; break;
+      case 'start': if (!S.mapId) return; S.game = E.newGame(); S.dec = E.blankDecision(); S.sel = null; S.rounds = E.ROUNDS; S.coach = 0; return go('plan');
       case 'sel': S.sel = k; S.say = null; break;
       case 'buy': if (S.sel !== k) S.sel = k; buy(k, tool); break;
       case 'undo': undo(k, tool); break;
@@ -458,7 +538,7 @@
       case 'final': return go('final');
       case 'extra': S.rounds = E.MAX_ROUNDS; S.dec = E.blankDecision(); S.sel = null; return go('plan');
       case 'reset': modal = 'reset'; break;
-      case 'resetYes': { const lang = S.lang, team = S.team; S = fresh(lang); S.team = team; return go('start'); }
+      case 'resetYes': { const lang = S.lang, team = S.team, mapId = S.mapId; S = fresh(lang); S.team = team; S.mapId = mapId; return go('start'); }
       default: return;
     }
     render();
@@ -479,6 +559,6 @@
   app.addEventListener('input', ev => { if (ev.target.id === 'team') { S.team = ev.target.value; save(); } });
   document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && modal) { modal = null; render(); } });
 
-  if (S.screen !== 'start' && !S.game) S = fresh(S.lang);
+  if (S.screen !== 'start' && (!S.game || !S.mapId)) S = fresh(S.lang);
   render();
 })();

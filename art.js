@@ -72,6 +72,15 @@
       ? `<path d="M${f1(x)},${f1(y - 8)} L${f1(x + 5)},${f1(y)} H${f1(x + 1.4)} V${f1(y + 3)} H${f1(x - 1.4)} V${f1(y)} H${f1(x - 5)} Z" fill="#3E6B45"/><path d="M${f1(x)},${f1(y - 11)} L${f1(x + 3.6)},${f1(y - 4)} H${f1(x - 3.6)} Z" fill="#4D7F52"/>`
       : `<rect x="${f1(x - 1)}" y="${f1(y - 1)}" width="2" height="4.5" fill="#6B5844"/><circle cx="${f1(x)}" cy="${f1(y - 4)}" r="4.6" fill="#5E9F4F"/><circle cx="${f1(x - 1.5)}" cy="${f1(y - 5.5)}" r="2" fill="#7DB868" opacity=".8"/>`;
   }
+  function grass(x, y) {
+    return `<path d="M${f1(x - 4)},${f1(y + 2)} l1,-4 l1,4 M${f1(x - 0.5)},${f1(y + 2)} l1,-5 l1,5 M${f1(x + 3)},${f1(y + 2)} l1,-3.5 l1,3.5" fill="none" stroke="#8DA65A" stroke-width="1.1" stroke-linecap="round"/>`;
+  }
+  // Ворота в духе Тяньаньмэнь — столица на карте Китая.
+  function gate(x, y) {
+    return `<g><rect x="${f1(x - 9)}" y="${f1(y - 2)}" width="18" height="7" fill="#A13A2C" stroke="${N}" stroke-width=".7"/><path d="M${f1(x - 1.6)},${f1(y + 5)} V${f1(y + 1)} a1.6,1.6 0 0 1 3.2,0 V${f1(y + 5)} Z" fill="${N}"/>` +
+      `<rect x="${f1(x - 7)}" y="${f1(y - 7)}" width="14" height="5" fill="#C9473A" stroke="${N}" stroke-width=".7"/><path d="M${f1(x - 10)},${f1(y - 7)} L${f1(x - 6)},${f1(y - 10)} H${f1(x + 6)} L${f1(x + 10)},${f1(y - 7)} Z" fill="#E2B865" stroke="${N}" stroke-width=".7"/>` +
+      `<path d="M${f1(x - 8)},${f1(y - 11.5)} L${f1(x - 5)},${f1(y - 14)} H${f1(x + 5)} L${f1(x + 8)},${f1(y - 11.5)} Z" fill="#E2B865" stroke="${N}" stroke-width=".7"/><rect x="${f1(x - 5)}" y="${f1(y - 11.5)}" width="10" height="1.6" fill="#A13A2C"/></g>`;
+  }
   function mountain(x, y) {
     return `<path d="M${f1(x - 9)},${f1(y + 5)} L${f1(x - 2)},${f1(y - 7)} L${f1(x + 2)},${f1(y - 1)} L${f1(x + 4)},${f1(y - 4)} L${f1(x + 10)},${f1(y + 5)} Z" fill="#A79F92"/><path d="M${f1(x - 2)},${f1(y - 7)} L${f1(x - 4.5)},${f1(y - 2.5)} L${f1(x - 2)},${f1(y - 3.5)} L${f1(x)},${f1(y - 3.6)} Z" fill="#F7F5F0"/>`;
   }
@@ -133,11 +142,11 @@
   }
 
   // ---------- сцены событий ----------
-  function eventScene(n, applied) {
+  function eventScene(n, applied, label1) {
     const sky = `<rect width="320" height="150" fill="#DCE8F1"/><rect y="112" width="320" height="38" fill="#BFD79B"/>`;
     if (n === 1) return `<svg viewBox="0 0 320 150" class="scene" aria-hidden="true">${sky}` +
       `<g transform="translate(70,104) scale(3)">${landmark('C', 0, 0)}</g>` +
-      `<rect x="168" y="22" width="132" height="84" rx="8" fill="#FFFDF8" stroke="#DDD6C8"/><text x="180" y="40" font-size="12" font-family="Arial" fill="#5F5A52">$ / баррель · 油价</text>` +
+      `<rect x="168" y="22" width="132" height="84" rx="8" fill="#FFFDF8" stroke="#DDD6C8"/><text x="180" y="40" font-size="12" font-family="Arial" fill="#5F5A52">${label1 || '$ / баррель · 油价'}</text>` +
       `<polyline points="180,52 205,58 225,54 248,74 270,86 290,96" fill="none" stroke="#A13A2C" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="200" stroke-dashoffset="200"><animate attributeName="stroke-dashoffset" from="200" to="0" dur="1.4s" fill="freeze"/></polyline>` +
       `<path d="M284,88 l10,10 l-13,1 Z" fill="#A13A2C"/>` +
       `<g transform="translate(130,98)"><ellipse cx="0" cy="12" rx="9" ry="3" fill="#6B5844"/><rect x="-9" y="-8" width="18" height="20" fill="#2B5C8A"/><ellipse cx="0" cy="-8" rx="9" ry="3" fill="#4C7BA6"/><path d="M-9,0 H9" stroke="#14213D" stroke-width="1.2"/></g></svg>`;
@@ -150,5 +159,5 @@
       (applied ? `<path d="M0,128 H320" stroke="#5A5048" stroke-width="10"/><path d="M0,128 H320" stroke="#F7F5F0" stroke-width="1.2" stroke-dasharray="8 8"/>${truck('M10,128 L310,128', 5, 0)}${truck('M10,128 L310,128', 5, 1.6)}` : `<text x="160" y="140" font-size="12" fill="#5F5A52" font-family="Arial" text-anchor="middle">нет дороги · 没有路</text>`) + `</svg>`;
   }
 
-  root.Art = { portrait, TOOL_ICON, tree, mountain, building, tierFor, landmark, sezZone, ship, wave, truck, cone, leaver, eventScene };
+  root.Art = { portrait, TOOL_ICON, tree, grass, gate, mountain, building, tierFor, landmark, sezZone, ship, wave, truck, cone, leaver, eventScene };
 })(this);

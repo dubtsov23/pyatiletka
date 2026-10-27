@@ -331,6 +331,19 @@ main > .talk { animation: up .35s ease-out both; }
 .rtool .tc { display: inline-flex; gap: 2px; }
 .hero { padding-bottom: 18px; }
 
+/* ---------- выбор карты ---------- */
+.mapopts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mapopt { border: 2px solid var(--line); background: var(--card); border-radius: 14px; padding: 6px 6px 8px; display: flex; flex-direction: column; align-items: stretch; gap: 6px; text-align: center; }
+.mapopt .mapprev { display: block; border-radius: 9px; overflow: hidden; background: #DCE8F1; pointer-events: none; }
+.mapopt .mapprev svg { display: block; width: 100%; height: auto; }
+.mapopt b { font-family: var(--serif); font-size: 19px; color: var(--navy); }
+.mapopt b small { display: block; font-family: var(--sans); font-size: 13px; font-weight: 500; color: var(--red); }
+.mapopt.on { border-color: var(--red); box-shadow: 0 0 0 2px var(--red) inset; background: #FFF6F2; }
+.cast div b { font-size: 12px; color: var(--ink); line-height: 1.15; }
+.cast div span { font-size: 11px; }
+.primary:disabled { background: #B5AC9E; box-shadow: none; }
+.eventcard p { margin: 8px 0 0; }
+
 @media (min-width: 980px) {
   #app { max-width: 1100px; }
   .status { top: 58px; }
