@@ -331,6 +331,12 @@ main > .talk { animation: up .35s ease-out both; }
 .rtool .tc { display: inline-flex; gap: 2px; }
 .hero { padding-bottom: 18px; }
 
+/* ---------- звук ---------- */
+.hero .langrow { display: flex; gap: 8px; align-items: center; }
+.top .ttl span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.icon-btn { display: grid; place-items: center; padding: 0; }
+.icon-btn[aria-pressed="false"] { opacity: .6; }
+
 /* ---------- заставка ---------- */
 #splash { position: fixed; inset: 0; z-index: 100; background: #B8282E; color: #FFF6EC; display: flex; align-items: center; justify-content: center; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); overflow-y: auto; transition: opacity .5s ease; }
 #splash [hidden] { display: none !important; }

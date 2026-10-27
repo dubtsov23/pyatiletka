@@ -264,9 +264,16 @@
   function langToggle() {
     return `<div class="lang" role="group" aria-label="Язык · 语言"><button type="button" data-lang="ru" aria-pressed="${S.lang === 'ru'}">RU</button><button type="button" data-lang="zh" aria-pressed="${S.lang === 'zh'}">中文</button></div>`;
   }
-  function topBar(title, sub) {
-    return `<header class="top"><div class="ttl"><b>${title}</b><span>${sub}</span></div>${langToggle()}<button type="button" class="icon-btn" data-act="rules" aria-label="${t('rules')}">?</button></header>`;
+  function soundBtn() {
+    const wave = S.muted ? '<path d="M16 9l5 6M21 9l-5 6"/>' : '<path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/>';
+    return `<button type="button" class="icon-btn" data-act="sound" aria-pressed="${!S.muted}" aria-label="Музыка · 音乐"><svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path d="M3 9h4l5-4v14l-5-4H3z" fill="currentColor"/><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">${wave}</g></svg></button>`;
   }
+  function topBar(title, sub) {
+    return `<header class="top"><div class="ttl"><b>${title}</b><span>${sub}</span></div>${langToggle()}${soundBtn()}<button type="button" class="icon-btn" data-act="rules" aria-label="${t('rules')}">?</button></header>`;
+  }
+  // Музыка экрана: марш в меню, своя мелодия у каждой карты, «Два тигра» на итоге.
+  const musicFor = () => (S.screen === 'start' ? 'menu' : S.screen === 'final' ? 'tigers' : S.mapId === 'cn' ? 'jasmine' : 'korob');
+  const sfx = kind => { if (window.Music) window.Music.sfx(kind); };
   const bottom = inner => `<div class="bottom"><div class="in">${inner}</div></div>`;
   function bubble(who, mood, text, extra) {
     return `<div class="talk${who === 'M' ? ' mei' : ''}">${A.portrait(who, mood, who === 'M' ? 52 : 64)}<div class="say"><b>${t('name' + who)}</b><p>${text}</p>${extra || ''}</div></div>`;
@@ -289,7 +296,7 @@
         `<b>${look(S.lang, 'mapName', id)}<small>${look(S.lang === 'zh' ? 'ru' : 'zh', 'mapName', id)}</small></b></button>`;
     };
     const roles = S.mapId ? `<div class="cast">${E.KEYS.map(k => `<div>${A.portrait(k, 0, 46)}<b>${rname(k, true)}</b><span>${t('role' + k)}</span></div>`).join('')}</div>` : '';
-    return `<section class="hero"><div class="langrow">${langToggle()}</div>` +
+    return `<section class="hero"><div class="langrow">${langToggle()}${soundBtn()}</div>` +
       `<div class="kick">${t('subtitle')}</div><h1>${h1}</h1></section>` +
       `<div class="startbody">` + bubble('M', 1, t('intro')) +
       `<div class="h4">${t('chooseMap')}</div><div class="mapopts">${pick('ru')}${pick('cn')}</div>` + roles +
@@ -470,6 +477,7 @@
     const ch = document.getElementById('chips');
     if (ch) ch.scrollLeft = chipsX;
     if (S.screen === 'calc') countUp();
+    if (window.Music) window.Music.setTrack(musicFor());
     save();
   }
   // Числа на карте итогов плавно доходят до нового уровня.
@@ -492,12 +500,14 @@
     const G = S.game, D = S.dec, r = E.region(k), d = D[k];
     const left = G.budget - E.spent(G, D);
     const before = E.playRound(G, D, false).lv[k];
-    if (tool === 'tax' && !E.canTax(G, k)) return say(k, 'lock_tax', -1);
-    if (tool === 'sez' && !r.sez) return say(k, 'lock_sez', 0);
+    const nope = (key, mood) => { sfx('nope'); say(k, key, mood); };
+    if (tool === 'tax' && !E.canTax(G, k)) return nope('lock_tax', -1);
+    if (tool === 'sez' && !r.sez) return nope('lock_sez', 0);
     if (tool === 'road' && G.roads.includes(k)) return say(k, 'has_road', 1);
     if (tool === 'sez' && G.sez.includes(k)) return say(k, 'has_sez', 1);
     if ((tool === 'road' && d.road) || (tool === 'sez' && d.sez)) return;
-    if (left < E.COST[tool]) return say(k, 'no_coins', 0);
+    if (left < E.COST[tool]) return nope('no_coins', 0);
+    sfx('buy');
     if (tool === 'dot') d.dot++;
     if (tool === 'tax') d.tax++;
     if (tool === 'road') d.road = true;
@@ -513,6 +523,7 @@
     if (tool === 'tax' && d.tax > 0) d.tax--;
     if (tool === 'road') d.road = false;
     if (tool === 'sez') d.sez = false;
+    sfx('undo');
     say(k, 'undo', 0);
   }
 
@@ -528,7 +539,12 @@
       case 'buy': if (S.sel !== k) S.sel = k; buy(k, tool); break;
       case 'undo': undo(k, tool); break;
       case 'confirm': modal = 'confirm'; break;
+      case 'sound':
+        S.muted = !S.muted;
+        if (window.Music) { window.Music.setMuted(S.muted); window.Music.unlock(); }
+        break;
       case 'commit': {
+        sfx('fanfare');
         const c = E.commit(S.game, S.dec);
         S.lastRound = S.game.round; S.last = c.result; S.game = c.state; S.dec = null;
         return go('event');
@@ -538,7 +554,7 @@
       case 'final': return go('final');
       case 'extra': S.rounds = E.MAX_ROUNDS; S.dec = E.blankDecision(); S.sel = null; return go('plan');
       case 'reset': modal = 'reset'; break;
-      case 'resetYes': { const lang = S.lang, team = S.team, mapId = S.mapId; S = fresh(lang); S.team = team; S.mapId = mapId; return go('start'); }
+      case 'resetYes': { const lang = S.lang, team = S.team, mapId = S.mapId, muted = S.muted; S = fresh(lang); S.team = team; S.mapId = mapId; S.muted = muted; return go('start'); }
       default: return;
     }
     render();
@@ -560,19 +576,22 @@
   document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && modal) { modal = null; render(); } });
 
   if (S.screen !== 'start' && (!S.game || !S.mapId)) S = fresh(S.lang);
+  if (window.Music) window.Music.setMuted(!!S.muted);
   render();
+  // Звук включается первым нажатием где угодно (если заставку уже закрыли).
+  document.addEventListener('pointerdown', () => { if (window.Music) window.Music.unlock(); }, { once: true });
 
   // Главное меню на заставке: пока грузится игра — полоска загрузки, потом кнопка «Играть».
   // Если партия уже идёт — «Продолжить» и «Новая игра».
   const splash = document.getElementById('splash');
   if (splash) {
     const play = document.getElementById('spPlay'), again = document.getElementById('spNew');
-    const close = () => { splash.classList.add('hide'); setTimeout(() => splash.remove(), 600); };
+    const close = () => { if (window.Music) window.Music.unlock(); splash.classList.add('hide'); setTimeout(() => splash.remove(), 600); };
     if (S.screen !== 'start') { play.innerHTML = 'Продолжить<small>继续游戏</small>'; again.hidden = false; }
     play.addEventListener('click', close);
     again.addEventListener('click', () => {
-      const lang = S.lang, team = S.team, mapId = S.mapId;
-      S = fresh(lang); S.team = team; S.mapId = mapId;
+      const lang = S.lang, team = S.team, mapId = S.mapId, muted = S.muted;
+      S = fresh(lang); S.team = team; S.mapId = mapId; S.muted = muted;
       go('start'); close();
     });
     setTimeout(() => {
