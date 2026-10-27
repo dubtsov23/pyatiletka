@@ -562,11 +562,22 @@
   if (S.screen !== 'start' && (!S.game || !S.mapId)) S = fresh(S.lang);
   render();
 
-  // Заставка видна, пока грузится игра, и всего не меньше 2,4 секунды; по нажатию исчезает сразу.
+  // Главное меню на заставке: пока грузится игра — полоска загрузки, потом кнопка «Играть».
+  // Если партия уже идёт — «Продолжить» и «Новая игра».
   const splash = document.getElementById('splash');
   if (splash) {
-    const hide = () => { if (!splash.isConnected) return; splash.classList.add('hide'); setTimeout(() => splash.remove(), 600); };
-    splash.addEventListener('click', hide);
-    setTimeout(hide, Math.max(0, 2400 - performance.now()));
+    const play = document.getElementById('spPlay'), again = document.getElementById('spNew');
+    const close = () => { splash.classList.add('hide'); setTimeout(() => splash.remove(), 600); };
+    if (S.screen !== 'start') { play.innerHTML = 'Продолжить<small>继续游戏</small>'; again.hidden = false; }
+    play.addEventListener('click', close);
+    again.addEventListener('click', () => {
+      const lang = S.lang, team = S.team, mapId = S.mapId;
+      S = fresh(lang); S.team = team; S.mapId = mapId;
+      go('start'); close();
+    });
+    setTimeout(() => {
+      splash.querySelector('.sp-load').hidden = true;
+      splash.querySelector('.sp-menu').hidden = false;
+    }, Math.max(0, 1200 - performance.now()));
   }
 })();
