@@ -3,55 +3,132 @@
 (function (root) {
   'use strict';
 
-  // ---------- портреты ----------
-  // mood: 1 — рад, 0 — спокоен, -1 — расстроен.
+  // ---------- портреты (аниме) ----------
+  // mood: 1 — рад (глаза-дуги «^^», улыбка), 0 — спокоен, -1 — расстроен (брови домиком, слеза).
+  // Голова одна на всех: лицо с острым подбородком, большие глаза с бликами; различаются
+  // причёска, шапка, одежда и мелочи (очки, пластырь, усы).
+  const LINE = '#2B1D1A';
   const PEOPLE = {
-    A: { bg: '#DCE4F0', skin: '#F1C9A5', hair: '#4A3226', cloth: '#14213D', acc: 'glasses', hairStyle: 'bob', scarf: '#A13A2C' },
-    B: { bg: '#CFE0EE', skin: '#E8B98F', hair: '#1E1A18', cloth: '#1F3F66', acc: 'captain', hairStyle: 'short' },
-    C: { bg: '#E7E0CF', skin: '#EBC09A', hair: '#7A4B2A', cloth: '#C8652B', acc: 'hardhat', hairStyle: 'beard' },
-    D: { bg: '#E3DDD6', skin: '#E9BE9C', hair: '#A8A29A', cloth: '#6B5844', acc: 'flatcap', hairStyle: 'mustache' },
-    E: { bg: '#E6E9CF', skin: '#E3B48C', hair: '#22191A', cloth: '#4F7D3A', acc: 'none', hairStyle: 'ponytail' },
-    M: { bg: '#F2E4D3', skin: '#F0C7A0', hair: '#1B1414', cloth: '#A13A2C', acc: 'earrings', hairStyle: 'bun' }
+    A: { bg: '#DCE4F0', skin: '#FBE0CC', hair: '#3B2620', iris: '#7A4A2A', cloth: '#1F2E4D', fem: true },   // столица: каре, очки
+    B: { bg: '#CFE0EE', skin: '#F5D3B5', hair: '#1E1A24', iris: '#2B5C8A', cloth: '#1F3F66' },              // порт: капитан
+    C: { bg: '#EDE3CC', skin: '#F2CBA8', hair: '#6B3E22', iris: '#3F7D4A', cloth: '#E07A2E' },              // ресурсы: каска
+    D: { bg: '#E3DDD6', skin: '#F0C9A6', hair: '#B5AFA6', iris: '#5F5A52', cloth: '#6B5844', old: true },  // старопром: седой директор
+    E: { bg: '#E6E9CF', skin: '#F5D2B4', hair: '#2A1E22', iris: '#5A3A2A', cloth: '#4F7D3A', fem: true },   // граница: хвостик
+    M: { bg: '#FBE3EA', skin: '#FBE2D0', hair: '#F28BA8', iris: '#C2416B', cloth: '#FFFDF8', fem: true }    // советница Мэй
+  };
+  const f = n => n.toFixed(1);
+
+  function eye(cx, cy, p, mood, side) {
+    if (p.old || mood > 0) {
+      // Прищур: у радости — дуга вверх, иначе — мягкая линия.
+      const up = mood > 0 ? -5.5 : -2.5;
+      return `<path d="M${f(cx - 5.4)},${f(cy + 1.4)} Q${f(cx)},${f(cy + up)} ${f(cx + 5.4)},${f(cy + 1.4)}" fill="none" stroke="${LINE}" stroke-width="2.4" stroke-linecap="round"/>`;
+    }
+    const lash = p.fem ? `<path d="M${f(cx + side * 6.2)},${f(cy - 4.6)} l${f(side * 2.6)},-2.2" stroke="${LINE}" stroke-width="1.8" stroke-linecap="round"/>` : '';
+    return `<ellipse cx="${cx}" cy="${cy}" rx="5.6" ry="6.6" fill="#FFFFFF"/>` +
+      `<ellipse cx="${cx}" cy="${f(cy + 0.8)}" rx="4.6" ry="5.8" fill="${p.iris}"/>` +
+      `<path d="M${f(cx - 4.6)},${f(cy + 0.8)} A4.6,5.8 0 0 1 ${f(cx + 4.6)},${f(cy + 0.8)} Z" fill="#000" opacity=".28"/>` +
+      `<ellipse cx="${cx}" cy="${f(cy + 1.4)}" rx="2" ry="2.8" fill="#1A1010"/>` +
+      `<circle cx="${f(cx - 1.9)}" cy="${f(cy - 1.6)}" r="1.9" fill="#FFFFFF"/><circle cx="${f(cx + 1.9)}" cy="${f(cy + 3.3)}" r=".9" fill="#FFFFFF"/>` +
+      `<path d="M${f(cx - 6.4)},${f(cy - 3.6)} Q${f(cx)},${f(cy - 8.8)} ${f(cx + 6.4)},${f(cy - 4)}" fill="none" stroke="${LINE}" stroke-width="2.5" stroke-linecap="round"/>` + lash +
+      `<path d="M${f(cx - 3.4)},${f(cy + 6.8)} Q${cx},${f(cy + 7.6)} ${f(cx + 3.4)},${f(cy + 6.8)}" fill="none" stroke="${LINE}" stroke-width=".9" opacity=".55"/>`;
+  }
+  function face(p, mood, ey) {
+    const L = 41, R = 59;
+    const bc = p.old ? p.hair : LINE, bw = p.old ? 3.2 : 1.6;
+    const bro = mood < 0
+      ? `M${L - 5},${ey - 9} Q${L},${ey - 9.5} ${L + 5},${ey - 12.5} M${R - 5},${ey - 12.5} Q${R},${ey - 9.5} ${R + 5},${ey - 9}`
+      : mood > 0
+        ? `M${L - 5},${ey - 10} Q${L},${ey - 14} ${L + 5},${ey - 11} M${R - 5},${ey - 11} Q${R},${ey - 14} ${R + 5},${ey - 10}`
+        : `M${L - 5},${ey - 10} Q${L},${ey - 12.5} ${L + 5},${ey - 11} M${R - 5},${ey - 11} Q${R},${ey - 12.5} ${R + 5},${ey - 10}`;
+    const my = p.old ? 68 : 66;
+    const mouth = mood > 0
+      ? `<path d="M44,${my - 1.5} Q50,${my + 6.5} 56,${my - 1.5} Z" fill="#8E2A2A" stroke="${LINE}" stroke-width="1.1" stroke-linejoin="round"/><path d="M46.6,${my + 1.6} Q50,${my + 4.6} 53.4,${my + 1.6} Q50,${my + 0.8} 46.6,${my + 1.6} Z" fill="#E87A7A"/>`
+      : mood < 0
+        ? `<path d="M46,${my + 1.8} Q50,${my - 1.6} 54,${my + 1.8}" fill="none" stroke="${LINE}" stroke-width="1.5" stroke-linecap="round"/>`
+        : `<path d="M46.5,${my} Q50,${my + 1.8} 53.5,${my}" fill="none" stroke="${LINE}" stroke-width="1.5" stroke-linecap="round"/>`;
+    const blushOp = mood > 0 ? .6 : .3;
+    const hatch = mood > 0 ? `<path d="M34,61.5 l1.6,-2.4 M36.6,61.5 l1.6,-2.4 M61.8,61.5 l1.6,-2.4 M64.4,61.5 l1.6,-2.4" stroke="#E5605F" stroke-width=".9" stroke-linecap="round"/>` : '';
+    const tear = mood < 0 ? `<path d="M${R + 3.4},${ey + 6} q-2.2,4.2 0,6.2 q2.2,-2 0,-6.2 Z" fill="#9AD0F5" stroke="#4A8AC0" stroke-width=".6"/>` : '';
+    return `<path d="M29,44 C29,25 71,25 71,44 L71,54 C71,67 60,77 50,80 C40,77 29,67 29,54 Z" fill="${p.skin}" stroke="${LINE}" stroke-width="1.4"/>` +
+      `<ellipse cx="36.5" cy="61" rx="4.4" ry="2.3" fill="#FF8A8A" opacity="${blushOp}"/><ellipse cx="63.5" cy="61" rx="4.4" ry="2.3" fill="#FF8A8A" opacity="${blushOp}"/>` + hatch +
+      eye(L, ey, p, mood, -1) + eye(R, ey, p, mood, 1) +
+      `<path d="${bro}" fill="none" stroke="${bc}" stroke-width="${bw}" stroke-linecap="round"/>` +
+      `<path d="M50,${ey + 6} L49,${ey + 8.6} L50.8,${ey + 8.8}" fill="none" stroke="${LINE}" stroke-width=".9" opacity=".6" stroke-linejoin="round"/>` +
+      mouth + tear;
+  }
+  // Плечи, шея, уши — общие; «воротник» рисует каждый персонаж сам.
+  function body(p) {
+    return `<path d="M10,104 C12,88 30,82 50,82 C70,82 88,88 90,104 Z" fill="${p.cloth}" stroke="${LINE}" stroke-width="1.4"/>` +
+      `<path d="M44,70 L44,85 L56,85 L56,70 Z" fill="${p.skin}" stroke="${LINE}" stroke-width="1.2"/><path d="M44,73 Q50,79 56,73 L56,77 Q50,82 44,77 Z" fill="#000" opacity=".1"/>` +
+      `<ellipse cx="29.5" cy="54" rx="3.6" ry="5" fill="${p.skin}" stroke="${LINE}" stroke-width="1.2"/><ellipse cx="70.5" cy="54" rx="3.6" ry="5" fill="${p.skin}" stroke="${LINE}" stroke-width="1.2"/>`;
+  }
+  const shine = (d, w) => `<path d="${d}" fill="none" stroke="#FFFFFF" stroke-opacity=".3" stroke-width="${w || 3}" stroke-linecap="round"/>`;
+  const hairPath = (d, p) => `<path d="${d}" fill="${p.hair}" stroke="${LINE}" stroke-width="1.3" stroke-linejoin="round"/>`;
+
+  // Для каждого: [за головой, одежда, поверх лица (чёлка, шапка, мелочи)], высота глаз.
+  const LOOKS = {
+    A: p => ({
+      ey: 53,
+      back: hairPath('M24,48 C22,22 38,13 50,13 C62,13 78,22 76,48 L77,71 C72,74 67,72 65,67 L35,67 C33,72 28,74 23,71 Z', p),
+      wear: `<path d="M41,83 L50,98 L59,83 Z" fill="#FFFDF8"/><path d="M36,84 L46,100 M64,84 L54,100" stroke="#14213D" stroke-width="1.6"/><path d="M43,83 Q50,89 57,83 L55,91 L50,88 L45,91 Z" fill="#A13A2C" stroke="${LINE}" stroke-width="1"/>`,
+      front: hairPath('M27,50 C26,27 38,17 50,17 C62,17 74,27 73,50 L70,50 L69,40 L65,43 L62,35 L58,42 L54,34 L50,41 L46,34 L42,42 L38,35 L35,43 L31,40 L30,50 Z', p) + shine('M37,25 Q50,19 63,25') +
+        `<g fill="#FFFFFF" fill-opacity=".14" stroke="#1F2E4D" stroke-width="1.6"><rect x="33.5" y="46" width="15" height="13" rx="4.5"/><rect x="51.5" y="46" width="15" height="13" rx="4.5"/></g><path d="M48.5,51.5 H51.5" stroke="#1F2E4D" stroke-width="1.6"/>`
+    }),
+    B: p => ({
+      ey: 54,
+      back: hairPath('M27,54 C26,42 30,36 35,35 L65,35 C70,36 74,42 73,54 L70,62 L68,48 L32,48 L30,62 Z', p),
+      wear: `<path d="M34,83 L50,96 L66,83" fill="none" stroke="#FFFDF8" stroke-width="3"/><path d="M38,85 L50,95 L62,85" fill="none" stroke="#FFFDF8" stroke-width="1.2"/><circle cx="50" cy="99" r="1.6" fill="#C9D3E3"/>`,
+      front: hairPath('M30,45 L33,37 L37,45 L41,38 L45,45 L50,38 L55,45 L59,38 L63,45 L67,37 L70,45 L70,38 L30,38 Z', p) +
+        `<path d="M22,32 C22,15 78,15 78,32 L73,37 L27,37 Z" fill="#FFFDF8" stroke="${LINE}" stroke-width="1.4"/><path d="M26,31 L74,31 L73,38 L27,38 Z" fill="#14213D" stroke="${LINE}" stroke-width="1.2"/>` +
+        `<path d="M29,38 Q50,47 71,38 L71,41 Q50,50 29,41 Z" fill="#1B2433" stroke="${LINE}" stroke-width="1"/>` +
+        `<circle cx="50" cy="27" r="4" fill="#A13A2C" stroke="${LINE}" stroke-width=".8"/><path d="M50,24.3 l.8,1.8 1.9,.2 -1.4,1.3 .4,1.9 -1.7,-1 -1.7,1 .4,-1.9 -1.4,-1.3 1.9,-.2 Z" fill="#FFFDF8"/>` + shine('M32,22 Q50,15 68,22', 2.5)
+    }),
+    C: p => ({
+      ey: 54,
+      back: hairPath('M26,52 L23,42 L29,44 L27,36 L33,40 L33,33 L67,33 L67,40 L73,36 L71,44 L77,42 L74,52 Z', p),
+      wear: `<path d="M12,97 L88,97" stroke="#D9DEE6" stroke-width="3.2"/><path d="M40,83 L50,92 L60,83" fill="none" stroke="#B8582A" stroke-width="2.4"/>`,
+      front: hairPath('M30,40 L33,47 L36,41 L40,48 L44,41 L48,47 L52,41 L56,48 L60,41 L64,47 L67,41 L70,40 Z', p) +
+        `<path d="M24,37 C24,13 76,13 76,37 Z" fill="#F2A33A" stroke="${LINE}" stroke-width="1.4"/><rect x="19" y="35" width="62" height="5.5" rx="2.7" fill="#F2A33A" stroke="${LINE}" stroke-width="1.3"/>` +
+        `<path d="M50,14 V35" stroke="#C9781E" stroke-width="3"/>` + shine('M32,24 Q40,17 48,16', 2.5) +
+        `<g transform="rotate(-22 65 64)"><rect x="60" y="62" width="10" height="4.2" rx="1.2" fill="#F6DCC0" stroke="${LINE}" stroke-width=".7"/><path d="M64,63.4 v1.4 M66,63.4 v1.4" stroke="#C9A27E" stroke-width=".7"/></g>`
+    }),
+    D: p => ({
+      ey: 55,
+      back: hairPath('M27,58 C25,44 27,38 31,36 L33,58 Z', p) + hairPath('M73,58 C75,44 73,38 69,36 L67,58 Z', p),
+      wear: `<path d="M42,83 L50,97 L58,83 Z" fill="#FFFDF8"/><path d="M48,85 L52,85 L53,99 L50,102 L47,99 Z" fill="#A13A2C" stroke="${LINE}" stroke-width=".8"/><path d="M36,84 L46,102 M64,84 L54,102" stroke="#4E3F30" stroke-width="1.6"/>`,
+      front: `<path d="M24,38 C24,22 72,19 75,33 L84,37 C72,42 40,42 24,38 Z" fill="#6E675E" stroke="${LINE}" stroke-width="1.4"/><circle cx="50" cy="24" r="2" fill="#56504A"/>` + shine('M32,29 Q46,22 62,24', 2.5) +
+        `<path d="M40,63.5 Q45,59.5 50,62.5 Q55,59.5 60,63.5 Q55,67 50,64.8 Q45,67 40,63.5 Z" fill="${p.hair}" stroke="${LINE}" stroke-width=".9"/>` +
+        `<path d="M32,55 l-3,-1.5 M32,57 l-3,0.5 M68,55 l3,-1.5 M68,57 l3,0.5" stroke="${LINE}" stroke-width=".8" opacity=".55" stroke-linecap="round"/>`
+    }),
+    E: p => ({
+      ey: 54,
+      back: hairPath('M27,52 C26,26 40,15 50,15 C62,15 74,26 73,52 Z', p) + hairPath('M64,28 C86,26 92,52 80,74 C80,58 76,44 62,38 Z', p) +
+        `<circle cx="68" cy="30" r="3.4" fill="#A13A2C" stroke="${LINE}" stroke-width=".9"/>`,
+      wear: `<path d="M40,83 L50,93 L60,83 L56,82 L50,88 L44,82 Z" fill="#FFFDF8" stroke="${LINE}" stroke-width=".9"/><path d="M50,93 V104" stroke="#3B5F2B" stroke-width="1.4"/>`,
+      front: hairPath('M27,53 C25,28 40,17 52,18 C66,19 75,30 73,50 L70,41 C64,43 58,39 54,32 C50,41 40,45 32,43 L30,53 Z', p) + shine('M38,24 Q50,19 62,23') +
+        `<rect x="34" y="34" width="8" height="2.6" rx="1.3" fill="#F2C94C" stroke="${LINE}" stroke-width=".6" transform="rotate(-28 38 35)"/>`
+    }),
+    M: p => ({
+      ey: 54,
+      back: hairPath('M26,54 C25,27 40,16 50,16 C60,16 75,27 74,54 L75,66 L68,60 L32,60 L25,66 Z', p) +
+        `<circle cx="29" cy="21" r="9.5" fill="${p.hair}" stroke="${LINE}" stroke-width="1.3"/><circle cx="71" cy="21" r="9.5" fill="${p.hair}" stroke="${LINE}" stroke-width="1.3"/>` +
+        shine('M24,17 Q28,13 33,15', 2) + shine('M66,15 Q71,13 75,17', 2),
+      wear: `<path d="M38,83 L50,92 L62,83" fill="none" stroke="#D8D2C6" stroke-width="1.4"/><path d="M41,83 L50,91 L59,83 L56,82 L50,87 L44,82 Z" fill="#C8102E" stroke="${LINE}" stroke-width=".9"/>` +
+        `<path d="M48,89 L44,101 L49,98 Z M52,89 L56,101 L51,98 Z" fill="#C8102E" stroke="${LINE}" stroke-width=".9" stroke-linejoin="round"/>`,
+      front: hairPath('M27,52 C26,28 38,19 50,19 C62,19 74,28 73,52 L70,42 L66,46 L63,37 L58,44 L54,36 L50,43 L46,36 L42,44 L37,37 L34,46 L30,42 Z', p) + shine('M37,26 Q50,21 63,26') +
+        hairPath('M28,46 L25,74 L31,67 Z', p) + hairPath('M72,46 L75,74 L69,67 Z', p)
+    })
   };
 
+  let portraitSeq = 0;
   function portrait(id, mood, size) {
-    const p = PEOPLE[id], s = size || 64;
-    const brows = mood > 0 ? 'M36,36 Q41,33 45,35 M55,35 Q59,33 64,36'
-      : mood < 0 ? 'M36,34 Q41,37 45,37 M55,37 Q59,37 64,34' : 'M36,35 L45,35 M55,35 L64,35';
-    const mouth = mood > 0 ? 'M41,56 Q50,65 59,56' : mood < 0 ? 'M42,61 Q50,55 58,61' : 'M43,59 Q50,61 57,59';
-    let back = '', front = '';
-    switch (p.hairStyle) {
-      case 'bob': back = `<path d="M27,48 C25,24 38,18 50,18 C63,18 76,24 73,48 L73,62 L64,62 L64,40 L36,40 L36,62 L27,62 Z" fill="${p.hair}"/>`;
-        front = `<path d="M31,38 C33,24 44,21 52,22 C62,23 69,29 69,38 C60,32 46,30 31,38 Z" fill="${p.hair}"/>`; break;
-      case 'short': front = `<path d="M30,40 C29,25 40,19 50,19 C61,19 71,25 70,40 C64,32 38,31 30,40 Z" fill="${p.hair}"/>`; break;
-      case 'beard': front = `<path d="M31,50 C32,64 40,71 50,71 C60,71 68,64 69,50 C66,57 60,60 50,60 C40,60 34,57 31,50 Z" fill="${p.hair}"/>`; break;
-      case 'mustache': front = `<path d="M30,38 C30,26 40,21 50,21 C60,21 70,26 70,38 C64,33 36,33 30,38 Z" fill="${p.hair}"/><path d="M41,55 Q50,50 59,55 Q50,53 41,55 Z" fill="${p.hair}" stroke="${p.hair}" stroke-width="2"/>`; break;
-      case 'ponytail': back = `<path d="M66,30 C80,34 82,52 74,64 C76,50 72,40 64,36 Z" fill="${p.hair}"/>`;
-        front = `<path d="M30,40 C29,24 40,18 50,18 C62,18 71,25 70,40 C62,30 40,29 30,40 Z" fill="${p.hair}"/>`; break;
-      case 'bun': back = `<circle cx="50" cy="15" r="9" fill="${p.hair}"/>`;
-        front = `<path d="M30,42 C28,24 40,19 50,19 C61,19 72,24 70,42 C64,30 36,30 30,42 Z" fill="${p.hair}"/>`; break;
-    }
-    let acc = '';
-    switch (p.acc) {
-      case 'glasses': acc = `<g fill="none" stroke="#14213D" stroke-width="1.8"><circle cx="41" cy="44" r="6"/><circle cx="59" cy="44" r="6"/><path d="M47,44 H53"/></g>`; break;
-      case 'captain': acc = `<path d="M27,30 C28,17 72,17 73,30 Z" fill="#FFFDF8" stroke="#14213D" stroke-width="1.5"/><path d="M25,30 H75 L71,35 H29 Z" fill="#14213D"/><circle cx="50" cy="24" r="3.2" fill="#A13A2C"/>`; break;
-      case 'hardhat': acc = `<path d="M27,33 C27,15 73,15 73,33 Z" fill="#F2A33A" stroke="#B8701E" stroke-width="1.5"/><rect x="22" y="31" width="56" height="5" rx="2.5" fill="#F2A33A" stroke="#B8701E" stroke-width="1.2"/><path d="M50,16 V31" stroke="#B8701E" stroke-width="2"/>`; break;
-      case 'flatcap': acc = `<path d="M28,33 C28,20 70,18 72,30 L78,34 C66,36 40,36 28,33 Z" fill="#7D776F"/>`; break;
-      case 'earrings': acc = `<circle cx="29.5" cy="54" r="2.2" fill="#C9D3E3"/><circle cx="70.5" cy="54" r="2.2" fill="#C9D3E3"/>`; break;
-    }
-    const scarf = p.scarf ? `<path d="M40,72 L50,84 L60,72 Z" fill="${p.scarf}"/>` : '';
-    const collar = `<path d="M40,72 L50,82 L60,72" fill="none" stroke="#FFFDF8" stroke-width="2.5"/>`;
+    const p = PEOPLE[id], s = size || 64, L = LOOKS[id](p);
+    const cid = 'pc' + (++portraitSeq);
     return `<svg viewBox="0 0 100 100" width="${s}" height="${s}" aria-hidden="true" class="portrait">` +
-      `<circle cx="50" cy="50" r="50" fill="${p.bg}"/>` +
-      `<clipPath id="pc-${id}-${s}"><circle cx="50" cy="50" r="50"/></clipPath><g clip-path="url(#pc-${id}-${s})">` +
-      back + `<path d="M14,104 C16,82 32,72 50,72 C68,72 84,82 86,104 Z" fill="${p.cloth}"/>` + collar + scarf +
-      `<rect x="44" y="62" width="12" height="11" fill="${p.skin}"/>` +
-      `<circle cx="29" cy="48" r="4.5" fill="${p.skin}"/><circle cx="71" cy="48" r="4.5" fill="${p.skin}"/>` +
-      `<ellipse cx="50" cy="45" rx="20" ry="23" fill="${p.skin}"/>` + front +
-      `<ellipse cx="41.5" cy="44" rx="2.3" ry="2.8" fill="#1B2433"/><ellipse cx="58.5" cy="44" rx="2.3" ry="2.8" fill="#1B2433"/>` +
-      `<path d="${brows}" fill="none" stroke="#3A2A20" stroke-width="2" stroke-linecap="round"/>` +
-      `<circle cx="36" cy="53" r="3.5" fill="#E88A7A" opacity="${mood > 0 ? 0.45 : 0.18}"/><circle cx="64" cy="53" r="3.5" fill="#E88A7A" opacity="${mood > 0 ? 0.45 : 0.18}"/>` +
-      `<path d="${mouth}" fill="none" stroke="#7A2E22" stroke-width="2.4" stroke-linecap="round"/>` + acc + `</g></svg>`;
+      `<clipPath id="${cid}"><circle cx="50" cy="50" r="50"/></clipPath>` +
+      `<circle cx="50" cy="50" r="50" fill="${p.bg}"/><g clip-path="url(#${cid})">` +
+      L.back + body(p) + L.wear + face(p, mood, L.ey) + L.front + `</g></svg>`;
   }
 
   // ---------- значки инструментов ----------
