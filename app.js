@@ -586,7 +586,13 @@
   const splash = document.getElementById('splash');
   if (splash) {
     const play = document.getElementById('spPlay'), again = document.getElementById('spNew');
-    const close = () => { if (window.Music) window.Music.unlock(); splash.classList.add('hide'); setTimeout(() => splash.remove(), 600); };
+    // На заставке всегда мелодия меню; звук включается первым касанием (раньше браузер не даёт).
+    const M = window.Music;
+    if (M) { M.setTrack('menu'); M.unlock(); }
+    splash.addEventListener('pointerdown', () => { if (M) M.unlock(); });
+    const mus = document.getElementById('spMusic');
+    if (mus) mus.addEventListener('click', () => { if (!M) return; if (S.muted) { S.muted = false; M.setMuted(false); save(); } M.unlock(); });
+    const close = () => { if (M) { M.unlock(); M.setTrack(musicFor()); } splash.classList.add('hide'); setTimeout(() => splash.remove(), 600); };
     if (S.screen !== 'start') { play.innerHTML = 'Продолжить<small>继续游戏</small>'; again.hidden = false; }
     play.addEventListener('click', close);
     again.addEventListener('click', () => {
